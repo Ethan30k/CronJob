@@ -1,6 +1,6 @@
 /*
 SQLyog Ultimate v10.00 Beta1
-MySQL - 5.7.17-log : Database - goschedulejob
+MySQL - 5.7.17-log : Database - CronJob
 *********************************************************************
 */
 
@@ -13,9 +13,9 @@ MySQL - 5.7.17-log : Database - goschedulejob
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-CREATE DATABASE /*!32312 IF NOT EXISTS*/`goschedulejob` /*!40100 DEFAULT CHARACTER SET utf8 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/`CronJob` /*!40100 DEFAULT CHARACTER SET utf8 */;
 
-USE `goschedulejob`;
+USE `CronJob`;
 
 /*Table structure for table `pp_task` */
 
