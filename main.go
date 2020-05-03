@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "CronJob/models"
 	_ "CronJob/routers"
 	"github.com/astaxie/beego"
 )
@@ -8,4 +9,3 @@ import (
 func main() {
 	beego.Run()
 }
-
