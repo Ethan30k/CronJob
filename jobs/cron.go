@@ -47,3 +47,11 @@ func GetEnteryById(id int) *crons.Entry {
 	}
 	return nil
 }
+
+func GetEntries(size int) []*crons.Entry {
+	ret := mainCron.Entries()
+	if len(ret) > size {
+		return ret[:size]
+	}
+	return ret
+}

@@ -1,5 +1,7 @@
 package models
 
+import "github.com/astaxie/beego/orm"
+
 //服务器分组
 type ServerGroup struct {
 	Id          int
@@ -14,4 +16,26 @@ type ServerGroup struct {
 
 func (servergroup *ServerGroup) TableName() string {
 	return TableName("task_server_group")
+}
+
+func ServerGroupGetList(page, pageSize int, filters ...interface{}) ([]*ServerGroup, int64) {
+	//获得任务表的句柄
+	query := orm.NewOrm().QueryTable(TableName("task_server_group"))
+	//判断是否存在过滤条件
+	if len(filters) > 0 {
+		//获取过滤条件的长度
+		l := len(filters)
+		//遍历过滤条件
+		for k := 0; k < l; k += 2 {
+			query = query.Filter(filters[k].(string), filters[k+1])
+		}
+	}
+	total, _ := query.Count()
+
+	list := make([]*ServerGroup, 0)
+	//计算偏移量
+	offset := (page - 1) * pageSize
+	//分页查询
+	query.OrderBy("-id").Limit(pageSize, offset).All(&list)
+	return list, total
 }

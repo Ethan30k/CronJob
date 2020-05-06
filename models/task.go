@@ -65,3 +65,15 @@ func TaskGetList(page, pageSize int, filters ...interface{}) ([]*Task, int64) {
 	query.OrderBy("-id").Limit(pageSize, offset).All(&list)
 	return list, total
 }
+
+//根据任务id获取任务
+func TaskGetById(id int) (*Task, error)  {
+	task := &Task{
+		Id:id,
+	}
+	err := orm.NewOrm().Read(task)
+	if err != nil{
+		return nil,err
+	}
+	return task, nil
+}

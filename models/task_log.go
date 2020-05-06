@@ -21,3 +21,26 @@ func (tasklog *TaskLog) TableName() string {
 func TaskLogAdd(t *TaskLog) (int64, error) {
 	return orm.NewOrm().Insert(t)
 }
+
+
+func TaskLogGetList(page, pageSize int, filters ...interface{}) ([]*TaskLog, int64) {
+	//获得任务表的句柄
+	query := orm.NewOrm().QueryTable(TableName("task_log"))
+	//判断是否存在过滤条件
+	if len(filters) > 0 {
+		//获取过滤条件的长度
+		l := len(filters)
+		//遍历过滤条件
+		for k := 0; k < l; k += 2 {
+			query = query.Filter(filters[k].(string), filters[k+1])
+		}
+	}
+	total, _ := query.Count()
+
+	list := make([]*TaskLog, 0)
+	//计算偏移量
+	offset := (page - 1) * pageSize
+	//分页查询
+	query.OrderBy("-id").Limit(pageSize, offset).All(&list)
+	return list, total
+}

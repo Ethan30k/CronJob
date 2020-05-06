@@ -34,6 +34,9 @@ type Job struct {
 	Concurrent bool
 }
 
+func (job *Job)GetId() int {
+	return job.id
+}
 
 func (j *Job) Run() {
 	//该任务不允许并发执行且该任务正在运行
@@ -194,7 +197,8 @@ func AllAdminInfo(adminIds string) []*models.Admin {
 		Filters = append(Filters, "id__in", notifyUserIds)
 	}
 	//查询
-	Result, _ := models.AdminGetList(1, 1000, Filters)
+	//参数三不要忘记加三个点
+	Result, _ := models.AdminGetList(1, 1000, Filters...)
 	return Result
 }
 

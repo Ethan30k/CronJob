@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/astaxie/beego"
-	"qiniupkg.com/x/url.v7"
+	"net/url"
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql" // import your used driver
 )

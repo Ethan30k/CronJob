@@ -1,5 +1,7 @@
 package models
 
+import "github.com/astaxie/beego/orm"
+
 //权限
 type Auth struct {
 	Id         int//主键
@@ -8,7 +10,7 @@ type Auth struct {
 	AuthUrl    string//url地址
 	Sort       int//排序
 	Icon       string
-	IsShow     int//是否隐藏
+	IsShow     int//是否隐藏  0：不显示  1：显示
 	UserId     int//操作者id
 	CreateId   int//创建者id
 	UpdateId   int//更新者id
@@ -21,3 +23,24 @@ func (auth *Auth) TableName() string {
 	return TableName("uc_auth")
 }
 
+func AuthGetList(page, pageSize int, filters ...interface{}) ([]*Auth, int64) {
+	//获得任务表的句柄
+	query := orm.NewOrm().QueryTable(TableName("uc_auth"))
+	//判断是否存在过滤条件
+	if len(filters) > 0 {
+		//获取过滤条件的长度
+		l := len(filters)
+		//遍历过滤条件
+		for k := 0; k < l; k += 2 {
+			query = query.Filter(filters[k].(string), filters[k+1])
+		}
+	}
+	total, _ := query.Count()
+
+	list := make([]*Auth, 0)
+	//计算偏移量
+	offset := (page - 1) * pageSize
+	//分页查询
+	query.OrderBy("pid", "sort").Limit(pageSize, offset).All(&list)
+	return list, total
+}

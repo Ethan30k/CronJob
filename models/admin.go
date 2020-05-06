@@ -47,3 +47,23 @@ func AdminGetList(page, pageSize int, filters ...interface{}) ([]*Admin, int64) 
 	query.OrderBy("-id").Limit(pageSize, offset).All(&list)
 	return list, total
 }
+
+//根据用户名查询管理员
+func AdminGetByName(loginName string) (*Admin, error) {
+	admin := new(Admin)
+	err := orm.NewOrm().QueryTable(TableName("uc_admin")).Filter("login_name", loginName).One(admin)
+	if err != nil{
+		return nil,err
+	}
+	return admin, nil
+}
+
+//根据id查询管理员
+func AdminGetById(id int) (*Admin , error){
+	admin := new(Admin)
+	err := orm.NewOrm().QueryTable(TableName("uc_admin")).Filter("id", id).One(admin)
+	if err !=nil{
+		return nil, err
+	}
+	return admin,nil
+}
