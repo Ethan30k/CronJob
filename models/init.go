@@ -2,12 +2,12 @@ package models
 
 import (
 	"github.com/astaxie/beego"
-	"net/url"
+	"qiniupkg.com/x/url.v7"
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql" // import your used driver
 )
 
-func init() {
+func Init() {
 	//获取ip
 	dbhost := beego.AppConfig.String("db.host")
 	//获取端口号
@@ -34,7 +34,7 @@ func init() {
 	}
 
 	// set default database
-	orm.RegisterDataBase("default", "mysql", dsn)
+	orm.RegisterDataBase("default", "mysql", dsn, 30)
 
 	// register model
 	orm.RegisterModel(

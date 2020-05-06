@@ -1,5 +1,7 @@
 package models
 
+import "github.com/astaxie/beego/orm"
+
 // 0：正常  -1：错误  -2:超时
 const (
 	TASK_SUCESS=0
@@ -15,10 +17,10 @@ type Task struct {
 	TaskName      string//任务名称
 	Description   string//任务描述
 	CronSpec      string//时间表达式
-	Concurrent    int//表示是否允许一个实例，0表示只允许一个实例
+	Concurrent    int//表示是否允许一个实例，1表示只允许一个实例
 	Command       string//命令
 	Timeout       int//超时时间
-	ExecuteTimes  int//执行时间
+	ExecuteTimes  int//执行次数
 	PrevTime      int64//上一次执行时间
 	IsNotify      int//是否通知管理员：0-不通知 1-通知
 	NotifyType    int//通知类型：0-邮件通知  1-短信通知
@@ -32,4 +34,34 @@ type Task struct {
 
 func (task *Task) TableName() string {
 	return TableName("task")
+}
+
+func (t *Task) Update(fields ...string) error {
+	if _, err := orm.NewOrm().Update(t, fields...); err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func TaskGetList(page, pageSize int, filters ...interface{}) ([]*Task, int64) {
+	//获得任务表的句柄
+	query := orm.NewOrm().QueryTable(TableName("task"))
+	//判断是否存在过滤条件
+	if len(filters) > 0 {
+		//获取过滤条件的长度
+		l := len(filters)
+		//遍历过滤条件
+		for k := 0; k < l; k += 2 {
+			query = query.Filter(filters[k].(string), filters[k+1])
+		}
+	}
+	total, _ := query.Count()
+
+	list := make([]*Task, 0)
+	//计算偏移量
+	offset := (page - 1) * pageSize
+	//分页查询
+	query.OrderBy("-id").Limit(pageSize, offset).All(&list)
+	return list, total
 }

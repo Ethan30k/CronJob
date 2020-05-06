@@ -1,5 +1,7 @@
 package models
 
+import "github.com/astaxie/beego/orm"
+
 //任务日志
 type TaskLog struct {
 	Id          int
@@ -14,4 +16,8 @@ type TaskLog struct {
 
 func (tasklog *TaskLog) TableName() string {
 	return TableName("task_log")
+}
+
+func TaskLogAdd(t *TaskLog) (int64, error) {
+	return orm.NewOrm().Insert(t)
 }
