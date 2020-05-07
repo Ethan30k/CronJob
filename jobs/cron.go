@@ -55,3 +55,15 @@ func GetEntries(size int) []*crons.Entry {
 	}
 	return ret
 }
+
+//根据id从切片中删除任务
+func RemoveJob(id int) {
+	mainCron.RemoveJob(func(e *crons.Entry) bool {
+		if v, ok := e.Job.(*Job); ok {
+			if v.id == id {
+				return true
+			}
+		}
+		return false
+	})
+}

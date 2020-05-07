@@ -155,6 +155,11 @@ func (c *Cron) AddJob(spec string, cmd Job) error {
 	return nil
 }
 
+//删除任务
+func (c *Cron) RemoveJob(cb RemoveCheckFunc) {
+	c.remove <- cb
+}
+
 func (c *Cron) Schedule(schedule cronexpr.Expression, cmd Job) {
 	entry := &Entry{
 		Schedule: schedule,

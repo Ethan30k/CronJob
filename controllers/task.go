@@ -4,6 +4,7 @@ import (
 	"CronJob/jobs"
 	"CronJob/models"
 	"github.com/astaxie/beego"
+	"github.com/gorhill/cronexpr"
 	"strconv"
 	"strings"
 	"time"
@@ -42,7 +43,7 @@ func (this *TaskController) Table() {
 	//接受任务分组id
 	groupId, _ := this.GetInt("group_id", 0)
 
-	if groupId ==0{
+	if groupId == 0 {
 		//当前不是超级管理员
 		if this.userId != 1 {
 			//通过逗号切割任务分组id
@@ -56,13 +57,13 @@ func (this *TaskController) Table() {
 			}
 			filters = append(filters, "group_id__in", groupsIds)
 		}
-	}else {
+	} else {
 		filters = append(filters, "group_id", groupId)
 	}
 
 	//接收分组名
 	taskName := strings.TrimSpace(this.GetString("task_name"))
-	if taskName !=""{
+	if taskName != "" {
 		filters = append(filters, "task_name__icontains", taskName)
 	}
 
@@ -119,12 +120,12 @@ func (this *TaskController) Table() {
 }
 
 //任务详情
-func (this *TaskController) Detail()  {
+func (this *TaskController) Detail() {
 	//获取任务id
 	id, _ := this.GetInt("id")
 	//根据任务id查询任务
 	task, err := models.TaskGetById(id)
-	if err != nil{
+	if err != nil {
 		return
 	}
 	this.Data["task"] = task
@@ -154,7 +155,7 @@ func (this *TaskController) Detail()  {
 	serverName := "本地服务器"
 	if task.ServerId == 0 {
 		serverName = "本地服务器"
-	}else if task.ServerId > 0{
+	} else if task.ServerId > 0 {
 		server, err := models.TaskSeverGetById(task.ServerId)
 		if err == nil {
 			serverName = server.ServerName
@@ -162,11 +163,10 @@ func (this *TaskController) Detail()  {
 	}
 	this.Data["serverName"] = serverName
 
-
 	//被通知人的id不是默认值并且不是空字符串
 	if task.NotifyUserIds != "0" && task.NotifyUserIds != "" {
 		this.Data["adminInfo"] = jobs.AllAdminInfo(task.NotifyUserIds)
-	}else {
+	} else {
 		this.Data["adminInfo"] = []*models.Admin{}
 	}
 
@@ -219,7 +219,7 @@ func (this *TaskController) AjaxRun() {
 }
 
 //编辑
-func (this *TaskController)Edit()  {
+func (this *TaskController) Edit() {
 	//获取任务id
 	id, _ := this.GetInt("id")
 	//根据任务id查询任务
@@ -240,7 +240,7 @@ func (this *TaskController)Edit()  {
 	//notify_user_ids
 	//5,3,2
 	var nodetifyUserIds []int
-	if task.NotifyUserIds != "0" &&  task.NotifyUserIds != "" {
+	if task.NotifyUserIds != "0" && task.NotifyUserIds != "" {
 		notifyUserIdStr := strings.Split(task.NotifyUserIds, ",")
 		for _, v := range notifyUserIdStr {
 			i, _ := strconv.Atoi(v)
@@ -248,6 +248,151 @@ func (this *TaskController)Edit()  {
 		}
 	}
 	this.Data["notify_user_ids"] = nodetifyUserIds
-
+	this.Data["isAdmin"] = this.userId
 	this.display()
+}
+
+func (this *TaskController) AjaxSave() {
+	task_id, _ := this.GetInt("id")
+	task, _ := models.TaskGetById(task_id)
+	//task_name  group_id  server_id  description  concurrent
+	// cron_spec  command  timeout  is_notify  notify_type  notify_user_ids
+	task.TaskName = strings.TrimSpace(this.GetString("task_name"))
+	task.GroupId, _ = this.GetInt("group_id")
+	task.ServerId, _ = this.GetInt("server_id")
+	task.Description = strings.TrimSpace(this.GetString("description"))
+	task.Concurrent, _ = this.GetInt("concurrent")
+	task.CronSpec = strings.TrimSpace(this.GetString("cron_spec"))
+	task.Command = strings.TrimSpace(this.GetString("command"))
+	task.Timeout, _ = this.GetInt("timeout")
+	task.IsNotify, _ = this.GetInt("is_notify")
+	task.NotifyType, _ = this.GetInt("notify_type")
+	task.NotifyUserIds = strings.TrimSpace(this.GetString("notify_user_ids"))
+	//手动补全
+	task.UpdateId = this.userId
+	task.UpdateTime = time.Now().Unix()
+	//如果是超级管理员，修改的任务无需审核
+	if this.userId == 1 {
+		task.Status = 0
+	} else {
+		task.Status = 2
+	}
+
+	//检查修改之后的命令中是否包含非法命令
+	flag := checkCommand(task.Command)
+	if flag {
+		this.ajaxMsg("含有禁止命令!", MSG_ERR)
+	}
+
+	//判断时间表达式是否合法
+	if _, err := cronexpr.Parse(task.CronSpec); err != nil {
+		this.ajaxMsg("时间表达式无效!", MSG_ERR)
+	}
+
+	if err := task.Update(); err != nil {
+		this.ajaxMsg("修改失败!", MSG_ERR)
+	}
+
+	this.ajaxMsg("", MSG_OK)
+}
+
+//检查是否包含含有禁用命令
+//返回值：是否包含
+//true：包含  false:不包含
+func checkCommand(command string) bool {
+	filters := make([]interface{}, 0)
+	//查询正常状态的禁用命令
+	filters = append(filters, "status", 0)
+	//分页查询
+	ban, _ := models.BanGetList(1, 10000, filters...)
+	for _, v := range ban {
+		if strings.Contains(v.Code, command) || strings.Contains(command, v.Code) {
+			return true
+		}
+	}
+	return false
+}
+
+//复制任务
+func (this *TaskController) Copy() {
+	id, _ := this.GetInt("id")
+	//根据任务id查询任务
+	task, err := models.TaskGetById(id)
+	if err != nil {
+		return
+	}
+	this.Data["task"] = task
+	//任务分组
+	this.Data["taskGroup"] = taskGroupLists(this.taskGroups, this.userId)
+	//服务器分组
+	this.Data["serverGroup"] = serverLists(this.serverGroups, this.userId)
+	//管理员信息
+	this.Data["adminInfo"] = jobs.AllAdminInfo("")
+	this.Data["pageTitle"] = "任务复制"
+	this.display()
+}
+
+//批量启动任务
+func (this *TaskController) AjaxBatchStart() {
+	//接收需要启动的任务的id
+	ids := this.GetString("ids")
+	//通过逗号进行切割
+	idArr := strings.Split(ids, ",")
+	//判断用户是否选择了任务
+	if len(idArr) < 1 {
+		this.ajaxMsg("请选择要操作的任务!", MSG_ERR)
+	}
+	for _, v := range idArr {
+		//将任务id转换为整形
+		id, _ := strconv.Atoi(v)
+		//判断id是否非法
+		if id < 1 {
+			continue
+		}
+		//根据任务id查询任务
+		if task, err := models.TaskGetById(id); err == nil {
+			//根据task创建job
+			job, err := jobs.NewJobFromTask(task)
+			//判断是否创建成功
+			if err == nil {
+				//将当前job添加到切片中
+				jobs.AddJob(task.CronSpec, job)
+				//修改任务的状态为启用状态
+				task.Status = 1
+				task.Update("status")
+			}
+		}
+	}
+
+	this.ajaxMsg("", MSG_OK)
+}
+
+//批量暂停任务
+func (this *TaskController) AjaxBatchPause() {
+	//接收需要启动的任务的id
+	ids := this.GetString("ids")
+	//通过逗号进行切割
+	idArr := strings.Split(ids, ",")
+	//判断用户是否选择了任务
+	if len(idArr) < 1 {
+		this.ajaxMsg("请选择要操作的任务!", MSG_ERR)
+	}
+	for _, v := range idArr {
+		//将任务id转换为整形
+		id, _ := strconv.Atoi(v)
+		//判断id是否非法
+		if id < 1 {
+			continue
+		}
+		//从切片删除job
+		jobs.RemoveJob(id)
+		//根据id查询任务
+		if task, err := models.TaskGetById(id); err == nil {
+			//任务的状态修改停用状态
+			task.Status = 0
+			//更新
+			task.Update("status")
+		}
+	}
+	this.ajaxMsg("", MSG_OK)
 }

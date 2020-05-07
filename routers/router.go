@@ -14,7 +14,10 @@ func init() {
     beego.Router("/home", &controllers.HomeController{},"*:Index")
     beego.Router("/home/start", &controllers.HomeController{},"*:Start")
 
+    //任务
     beego.AutoRouter(&controllers.TaskController{})
+    //任务日志
+    beego.AutoRouter(&controllers.TaskLogController{})
 
 
 }
