@@ -25,7 +25,7 @@ type Task struct {
 	IsNotify      int//是否通知管理员：0-不通知 1-通知
 	NotifyType    int//通知类型：0-邮件通知  1-短信通知
 	NotifyUserIds string//被通知人的id
-	Status        int//状态   -1：删除  0：停用  1：启用  3：不通过
+	Status        int//状态   -1：删除  0：停用  1：启用  3：不通过 2:待审核
 	CreateTime    int64//创建时间
 	CreateId      int//创建人的id
 	UpdateTime    int64//更新时间

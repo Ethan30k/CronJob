@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"CronJob/jobs"
+	"CronJob/libs"
 	"CronJob/models"
 	"github.com/astaxie/beego"
 	"time"
@@ -80,6 +81,14 @@ func (this *HomeController) Start() {
 	startJob:=len(jobList)
 	this.Data["startJob"] = startJob
 	this.Data["jobs"] = jobList
+
+	//查询任务总数量
+	_, count := models.TaskGetList(1, 100000)
+	this.Data["totalJob"] = count
+
+	//系统运行信息
+	info := libs.SystemInfo(models.StartTime)
+	this.Data["sysInfo"] = info
 
 	this.Layout="public/layout.html"
 	this.TplName=this.controllerName +"/"+this.actionName+".html"

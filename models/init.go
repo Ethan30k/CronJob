@@ -2,12 +2,16 @@ package models
 
 import (
 	"github.com/astaxie/beego"
-	"net/url"
 	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql" // import your used driver
+	"net/url"
 )
 
-func Init() {
+var StartTime int64
+
+func Init(StartTime int64) {
+	StartTime = StartTime
+
 	//获取ip
 	dbhost := beego.AppConfig.String("db.host")
 	//获取端口号
@@ -19,7 +23,6 @@ func Init() {
 	//获取数据库名称
 	dbname := beego.AppConfig.String("db.name")
 
-
 	timezone := beego.AppConfig.String("db.timezone")
 	if dbport == "" {
 		dbport = "3306"
@@ -27,10 +30,10 @@ func Init() {
 	dsn := dbuser + ":" + dbpassword + "@tcp(" + dbhost +
 		":" + dbport + ")/" + dbname + "?charset=utf8"
 
-		//   Asia  %2F  Shanghai
-		//   Asia  /    Shanghai
-	if 	timezone != "" {
-		dsn = dsn + "&loc="+url.QueryEscape(timezone)
+	//   Asia  %2F  Shanghai
+	//   Asia  /    Shanghai
+	if timezone != "" {
+		dsn = dsn + "&loc=" + url.QueryEscape(timezone)
 	}
 
 	// set default database

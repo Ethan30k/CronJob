@@ -13,4 +13,8 @@ func init() {
     //首页
     beego.Router("/home", &controllers.HomeController{},"*:Index")
     beego.Router("/home/start", &controllers.HomeController{},"*:Start")
+
+    beego.AutoRouter(&controllers.TaskController{})
+
+
 }

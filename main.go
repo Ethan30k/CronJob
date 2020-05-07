@@ -5,10 +5,11 @@ import (
 	"CronJob/models"
 	_ "CronJob/routers"
 	"github.com/astaxie/beego"
+	"time"
 )
 
 func init() {
-	models.Init()
+	models.Init(time.Now().Unix())
 	jobs.InitJob()
 }
 

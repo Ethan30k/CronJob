@@ -13,7 +13,7 @@ type RoleAuth struct {
 }
 
 func (roleauth *RoleAuth) TableName() string {
-	return TableName("uc_auth_role")
+	return TableName("uc_role_auth")
 }
 
 

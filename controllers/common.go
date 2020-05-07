@@ -23,6 +23,9 @@ type BaseController struct {
 	actionName     string
 
 	serverGroups string //服务器分组id
+	taskGroups   string //任务分组id
+
+	pageSize int //每页显示的数量
 }
 
 func (this *BaseController) Prepare() {
@@ -34,6 +37,8 @@ func (this *BaseController) Prepare() {
 	//将方法名称转换为小写
 	this.actionName = strings.ToLower(actionName)
 
+	//标题内容
+	this.Data["siteName"] = beego.AppConfig.String("site.name")
 	this.Auth()
 }
 
@@ -58,13 +63,15 @@ func (this *BaseController) dataAuth(user *models.Admin) {
 
 	Filters = append(Filters, "id__in", RoleIds)
 	Result, _ := models.RoleGetList(1, 1000, Filters...)
-	serverGroup := ""
+	serverGroup := "" //服务器分组id
+	taskGroup := ""   //任务分组id
 	//拼接服务器
 	for _, v := range Result {
 		serverGroup += v.ServerGroupIds + ","
+		taskGroup += v.TaskGroupIds + ","
 	}
 	this.serverGroups = strings.TrimRight(serverGroup, ",")
-
+	this.taskGroups = strings.TrimRight(taskGroup, ",")
 }
 
 //验证用户是否登录了
@@ -186,8 +193,100 @@ func serverGroupLists(authStr string, adminId int) (sgl map[int]string) {
 	groupResult, n := models.ServerGroupGetList(1, 1000, Filters...)
 	sgl = make(map[int]string, n)
 	//遍历服务器分组切片，将其中值封装到map中
-	for _,gv := range groupResult{
+	for _, gv := range groupResult {
 		sgl[gv.Id] = gv.GroupName
 	}
 	return sgl
+}
+
+//获取任务分组信息
+func taskGroupLists(authstr string, adminId int) map[int]string {
+	groupFilters := make([]interface{}, 0)
+	groupFilters = append(groupFilters, "status", 1)
+	//判断authstr不是空字符串并且当前不是超级管理员
+	if authstr != "" && adminId != 1 {
+		//1,2,3
+		//通过逗号切割
+		taskGroupIdArr := strings.Split(authstr, ",")
+		//将字符串分组id转换为整型分组id
+		taskGroupId := make([]int, 0)
+		for _, v := range taskGroupIdArr {
+			id, _ := strconv.Atoi(v)
+			taskGroupId = append(taskGroupId, id)
+		}
+		groupFilters = append(groupFilters, "id__in", taskGroupId)
+	}
+	//分页查询
+	groupResult, n := models.GroupGetList(1, 10000, groupFilters...)
+	gl := make(map[int]string, n)
+	for _, gv := range groupResult {
+		gl[gv.Id] = gv.GroupName
+	}
+	return gl
+}
+
+func (this *BaseController) display(tpl ...string) {
+	var tplname string
+	if len(tpl) > 0 {
+		tplname = strings.Join([]string{tpl[0], "html"}, ".")
+	} else {
+		tplname = this.controllerName + "/" + this.actionName + ".html"
+	}
+
+	this.Layout = "public/layout.html"
+	this.TplName = tplname
+}
+
+/*{
+	"code" :0,
+	"msg":"",
+	"count":1000,
+	"data":[{},{}]
+}*/
+//ajax返回
+func (this *BaseController) ajaxList(msg interface{}, msgno int, count int64, data interface{}) {
+	out := make(map[string]interface{})
+	out["code"] = msgno
+	out["msg"] = msg
+	out["count"] = count
+	out["data"] = data
+	this.Data["json"] = out
+	this.ServeJSON()
+	this.StopRun()
+}
+
+type serverList struct {
+	//服务器分组名称
+	GroupName string   //A     B
+	//服务器  map[id]name
+	Servers map[int]string //{[1,测试服务器], [2, 远程服务器]}  {[1,测试服务器], [2, 远程服务器]}
+}
+
+//获取服务器分组信息
+func serverLists(authStr string, adminId int) (sls []serverList) {
+	//根据服务器分组id和管理员id查询服务器分组
+	//A   B   C
+	serverGroup := serverGroupLists(authStr, adminId)
+	//创建切片，用于存储过滤调价
+	Filter := make([]interface{}, 0)
+	//查询所有正常的服务器
+	Filter = append(Filter, "status", 0)
+	//   测试1服务器   测试2服务器   测试3服务器   测试4服务器
+
+	//A:测试1服务器   测试2服务器   B:测试3服务器  C:测试4服务器
+	Result, _ := models.TaskServerGetList(1, 100000, Filter...)
+	//遍历map
+	for k, v := range serverGroup {
+		sl := serverList{}
+		sl.GroupName = v
+		servers := make(map[int]string)
+		for _, sv := range Result {
+			if sv.GroupId == k {
+				servers[sv.Id] = sv.ServerName
+			}
+		}
+		sl.Servers = servers
+		sls = append(sls, sl)
+	}
+	return sls
 }
