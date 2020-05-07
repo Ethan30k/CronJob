@@ -44,3 +44,23 @@ func TaskLogGetList(page, pageSize int, filters ...interface{}) ([]*TaskLog, int
 	query.OrderBy("-id").Limit(pageSize, offset).All(&list)
 	return list, total
 }
+
+//根据任务日志id查询任务日志
+func TaskLogGetById(id int) (*TaskLog, error) {
+	obj := &TaskLog{
+		Id:id,
+	}
+	//查询
+	err := orm.NewOrm().Read(obj)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+
+//根据id删除日志
+func TaskLogDelById(id int) error {
+	_, err := orm.NewOrm().QueryTable(TableName("task_log")).Filter("id", id).Delete()
+	return err
+}

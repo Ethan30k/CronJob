@@ -39,3 +39,16 @@ func ServerGroupGetList(page, pageSize int, filters ...interface{}) ([]*ServerGr
 	query.OrderBy("-id").Limit(pageSize, offset).All(&list)
 	return list, total
 }
+
+//根据任务分组id查询任务分组
+func ServerGroupGetById(id int) (*ServerGroup, error) {
+	obj := &ServerGroup{
+		Id:id,
+	}
+	//查询
+	err := orm.NewOrm().Read(obj)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}

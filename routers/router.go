@@ -19,5 +19,6 @@ func init() {
     //任务日志
     beego.AutoRouter(&controllers.TaskLogController{})
 
-
+	//group/list
+	beego.AutoRouter(&controllers.GroupController{})
 }

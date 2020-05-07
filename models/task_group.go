@@ -42,9 +42,17 @@ func GroupGetList(page, pageSize int, filters ...interface{}) ([]*Group, int64) 
 	return list, total
 }
 
+func (t *Group) Update(fields ...string) error {
+	if _, err := orm.NewOrm().Update(t, fields...); err != nil {
+		return err
+	}
+	return nil
+
+}
+
 //根据任务分组id查询任务分组
-func TaskGroupGetById(id int) (*ServerGroup, error) {
-	obj := &ServerGroup{
+func TaskGroupGetById(id int) (*Group, error) {
+	obj := &Group{
 		Id:id,
 	}
 	//查询
@@ -54,3 +62,4 @@ func TaskGroupGetById(id int) (*ServerGroup, error) {
 	}
 	return obj, nil
 }
+
