@@ -256,6 +256,7 @@ func (this *BaseController) ajaxList(msg interface{}, msgno int, count int64, da
 }
 
 type serverList struct {
+	GroupId int
 	//服务器分组名称
 	GroupName string   //A     B
 	//服务器  map[id]name
@@ -279,6 +280,7 @@ func serverLists(authStr string, adminId int) (sls []serverList) {
 	for k, v := range serverGroup {
 		sl := serverList{}
 		sl.GroupName = v
+		sl.GroupId = k
 		servers := make(map[int]string)
 		for _, sv := range Result {
 			if sv.GroupId == k {

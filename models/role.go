@@ -43,3 +43,31 @@ func RoleGetList(page, pageSize int, filters ...interface{}) ([]*Role, int64) {
 	query.OrderBy("-id").Limit(pageSize, offset).All(&list)
 	return list, total
 }
+
+//添加角色
+func RoleAdd(role *Role) (int64, error) {
+	id, err := orm.NewOrm().Insert(role)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+//根据id查询角色
+func RoleGetById(id int) (*Role, error) {
+	r := new(Role)
+	//查询
+	err := orm.NewOrm().QueryTable(TableName("uc_role")).Filter("id", id).One(r)
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+//更新
+func (t *Role) Update(fields ...string) error {
+	if _, err := orm.NewOrm().Update(t, fields...); err != nil {
+		return err
+	}
+	return nil
+}

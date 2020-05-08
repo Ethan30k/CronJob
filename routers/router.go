@@ -21,4 +21,9 @@ func init() {
 
 	//group/list
 	beego.AutoRouter(&controllers.GroupController{})
+
+    beego.AutoRouter(&controllers.RoleController{})
+
+	//权限管理
+	beego.AutoRouter(&controllers.AuthController{})
 }

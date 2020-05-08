@@ -42,3 +42,8 @@ func RoleAuthGetByIds(RoleIds string) (Authids string,err error) {
 	Authids = strings.TrimRight(b.String(), ",")
 	return Authids, nil
 }
+
+//批量插入
+func RoleAuthBatchAdd(ras *[]RoleAuth) (int64, error) {
+	return orm.NewOrm().InsertMulti(len(*ras), ras)
+}
