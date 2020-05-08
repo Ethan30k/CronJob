@@ -63,34 +63,70 @@ func (this *RoleController) Add() {
 }
 
 func (this *RoleController) AjaxSave() {
-	//   var data = {'role_name':role_name,'detail':detail,'nodes_data':nodes_data,'server_group_ids':server_group_ids,'task_group_ids':task_group_ids}
+	// var data = {'role_name':role_name,'detail':detail,'nodes_data':nodes_data,'server_group_ids':server_group_ids,'task_group_ids':task_group_ids}
+	//var data = {'role_name':role_name,'detail':detail,'nodes_data':nodes_data,'server_group_ids':server_group_ids,'task_group_ids':task_group_ids,'id':id,}
 	role := new(models.Role)
 	role.RoleName = strings.TrimSpace(this.GetString("role_name"))
 	role.Detail = strings.TrimSpace(this.GetString("detail"))
 
+	// 2
+	//  2  3  4
 	auths := strings.TrimSpace(this.GetString("nodes_data"))
 
 	role.ServerGroupIds = strings.TrimSpace(this.GetString("server_group_ids"))
 	role.TaskGroupIds = strings.TrimSpace(this.GetString("task_group_ids"))
 
-	role.CreateId = this.userId
-	role.CreateTime = time.Now().Unix()
+
 	role.UpdateId = this.userId
 	role.UpdateTime = time.Now().Unix()
 	role.Status = 1
 
-	if id, err := models.RoleAdd(role); err != nil {
-		this.ajaxMsg("添加失败!", MSG_ERR)
+
+	//接收id
+	role_id, _ := this.GetInt("id")
+
+	//保存
+	if role_id == 0 {
+		role.CreateId = this.userId
+		role.CreateTime = time.Now().Unix()
+		if id, err := models.RoleAdd(role); err != nil {
+			this.ajaxMsg("添加失败!", MSG_ERR)
+		}else {
+			authsArr := strings.Split(auths, ",")
+			ras := make([]models.RoleAuth, 0)
+			for _, v := range authsArr {
+				ra := models.RoleAuth{}
+				aid, _ := strconv.Atoi(v)
+				ra.AuthId = aid
+				ra.RoleId = id
+				ras = append(ras, ra)
+			}
+			if len(ras) > 0 {
+				models.RoleAuthBatchAdd(&ras)
+			}
+		}
+		this.ajaxMsg("", MSG_OK)
+	}
+
+	//修改
+	role.Id = role_id
+	if err := role.Update(); err != nil {
+		this.ajaxMsg("更新失败!", MSG_ERR)
 	}else {
-		authsArr := strings.Split(auths, ",")
+		//根据角色id删除中间表中的内容
+		models.RoleAuthDelete(role_id)
+
 		ras := make([]models.RoleAuth, 0)
+		auths = strings.TrimRight(auths, ",")
+		authsArr := strings.Split(auths, ",")
 		for _, v := range authsArr {
 			ra := models.RoleAuth{}
-			aid, _ := strconv.Atoi(v)
-			ra.AuthId = aid
-			ra.RoleId = id
+			authId, _ := strconv.Atoi(v)
+			ra.AuthId = authId
+			ra.RoleId = int64(role_id)
 			ras = append(ras, ra)
 		}
+
 		if len(ras) > 0 {
 			models.RoleAuthBatchAdd(&ras)
 		}

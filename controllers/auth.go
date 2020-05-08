@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"CronJob/models"
+	"strings"
+	"time"
 )
 
 type AuthController struct {
@@ -31,4 +33,86 @@ func (this *AuthController) GetNodes() {
 		list[k] = row
 	}
 	this.ajaxList("成功", MSG_OK, count, list)
+}
+
+func (this *AuthController) List() {
+	this.Data["zTree"] = true
+	this.Data["pageTitle"] = "权限因子"
+	this.display()
+}
+
+/*
+auth_name: 任务列表
+pid: 31
+auth_url: /task/aaa
+icon:
+sort: 13
+is_show: 1
+id: 0
+
+auth_name: 编辑11111111
+pid: 31
+auth_url: /task/edit
+icon:
+sort: 100
+is_show: 0
+id: 37
+*/
+func (this *AuthController) AjaxSave() {
+	auth := new(models.Auth)
+	auth.AuthName = strings.TrimSpace(this.GetString("auth_name"))
+	auth.Pid, _ = this.GetInt("pid")
+	auth.AuthUrl = strings.TrimSpace(this.GetString("auth_url"))
+	auth.Icon = strings.TrimSpace(this.GetString("icon"))
+	auth.Sort, _ = this.GetInt("sort")
+	auth.IsShow, _ = this.GetInt("is_show")
+	id, _ := this.GetInt("id")
+
+	auth.UpdateId = this.userId
+	auth.UpdateTime =  time.Now().Unix()
+	auth.Status = 1
+	//添加
+	if id == 0 {
+		auth.CreateId = this.userId
+		auth.CreateTime =  time.Now().Unix()
+		if _, err := models.AuthAdd(auth); err != nil {
+			this.ajaxMsg("添加失败!", MSG_ERR)
+		}
+		this.ajaxMsg("", MSG_OK)
+	}
+	auth.Id = id
+	if err := auth.Update(); err != nil {
+		this.ajaxMsg("修改失败!", MSG_ERR)
+	}
+	this.ajaxMsg("", MSG_OK)
+}
+/*
+auth_url
+icon
+sort
+is_show
+*/
+//获取某一个节点
+func (this *AuthController) GetNode() {
+	id, _ := this.GetInt("id")
+	result, _ := models.AuthGetById(id)
+	row := make(map[string]interface{})
+	row["auth_url"] = result.AuthUrl
+	row["icon"] = result.Icon
+	row["sort"] = result.Sort
+	row["is_show"] = result.IsShow
+	this.ajaxList("成功", MSG_OK, 0, row)
+}
+
+//删除权限
+func (this *AuthController) AjaxDel() {
+	id, _ := this.GetInt("id")
+	auth, _ := models.AuthGetById(id)
+	auth.Status = 0//0是被删除状态
+	auth.UpdateId = this.userId
+	auth.UpdateTime = time.Now().Unix()
+	if err := auth.Update(); err != nil {
+		this.ajaxMsg("删除失败!", MSG_ERR)
+	}
+	this.ajaxMsg("", MSG_OK)
 }

@@ -44,3 +44,28 @@ func AuthGetList(page, pageSize int, filters ...interface{}) ([]*Auth, int64) {
 	query.OrderBy("pid", "sort").Limit(pageSize, offset).All(&list)
 	return list, total
 }
+
+//添加权限
+func AuthAdd(auth *Auth) (int64, error) {
+	return orm.NewOrm().Insert(auth)
+}
+
+//根据任务id获取任务
+func AuthGetById(id int) (*Auth, error) {
+	auth := &Auth{
+		Id:id,
+	}
+	err := orm.NewOrm().Read(auth)
+	if err != nil {
+		return nil, err
+	}
+	return auth, nil
+}
+
+
+func (auth *Auth) Update(fields ...string) error {
+	if _, err := orm.NewOrm().Update(auth, fields...); err != nil {
+		return err
+	}
+	return nil
+}

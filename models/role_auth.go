@@ -47,3 +47,19 @@ func RoleAuthGetByIds(RoleIds string) (Authids string,err error) {
 func RoleAuthBatchAdd(ras *[]RoleAuth) (int64, error) {
 	return orm.NewOrm().InsertMulti(len(*ras), ras)
 }
+
+//根据角色id查询权限
+func RoleAuthGetById(id int) ([]*RoleAuth, error) {
+	list := make([]*RoleAuth, 0)
+	_, err := orm.NewOrm().QueryTable(TableName("uc_role_auth")).Filter("role_id", id).All(&list)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+
+//根据角色id删除中间表中的内容
+func RoleAuthDelete(id int) (int64, error) {
+	return orm.NewOrm().QueryTable(TableName("uc_role_auth")).Filter("role_id", id).Delete()
+}
